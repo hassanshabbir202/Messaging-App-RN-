@@ -8,6 +8,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from './src/screens/HomeScreen';
 import ChatHistoryScreen from './src/screens/ChatHistoryScreen';
 import CreateNewContactScreen from './src/screens/CreateNewContactScreen';
+import ContactDetailsScreen from './src/screens/ContactDetailsScreen';
 
 // Step 3: Ek Stack Navigator banayein
 const Stack = createNativeStackNavigator();
@@ -40,6 +41,14 @@ export default function App() {
         <Stack.Screen 
           name="NewContact" 
           component={CreateNewContactScreen} 
+          // Is screen ke header ko bhi chupa dete hain kyunki aapne custom header banaya hai
+          options={{ headerShown: false }} 
+        />
+            
+        {/* Doosri Screen */}
+        <Stack.Screen 
+          name="ContactDetails" 
+          component={ContactDetailsScreen} 
           // Is screen ke header ko bhi chupa dete hain kyunki aapne custom header banaya hai
           options={{ headerShown: false }} 
         />
