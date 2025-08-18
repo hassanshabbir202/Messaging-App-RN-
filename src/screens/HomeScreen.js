@@ -169,7 +169,7 @@ const HomeScreen = ({ navigation }) => {
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
       <View style={styles.header}>
-        <Text style={styles.title}>Chat App</Text>
+        <Text style={styles.title}>WhatsApp</Text>
         <View style={styles.headerIconsContainer}>
           <MaterialCommunityIcons
             name="camera-outline"
