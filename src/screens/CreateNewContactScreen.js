@@ -10,12 +10,10 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-// Vector Icons ko import karein
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 
-// Screen par dikhane ke liye contacts ka data
 const contactsData = [
   {
     id: '1',
@@ -33,7 +31,7 @@ const contactsData = [
     id: '3',
     name: 'Ash',
     status: 'Hey there! I am using WhatsApp.',
-    avatar: null, // Default avatar ke liye
+    avatar: null, 
   },
   {
     id: '4',
@@ -67,7 +65,6 @@ const contactsData = [
   },
 ];
 
-// List ke shuru mein "New Group" aur "New Contact" waale options
 const ListHeader = ({ navigation }) => (
   <>
     <TouchableOpacity style={styles.actionRow}>
@@ -88,7 +85,6 @@ const ListHeader = ({ navigation }) => (
   </>
 );
 
-// Har contact ko list mein render karne wala component
 const ContactItem = ({ item }) => (
   <TouchableOpacity style={styles.contactRow}>
     {item.avatar ? (
@@ -110,7 +106,6 @@ const CreateNewContactScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#075E54" barStyle="light-content" />
 
-      {/* Custom Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="white" />

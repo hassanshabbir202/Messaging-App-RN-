@@ -10,11 +10,9 @@ import {
   StatusBar,
 } from 'react-native';
 
-// Vector Icons
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-// --- Farzi Data ---
 const statusData = [
   {
     id: '1',
@@ -103,7 +101,6 @@ const channelsData = [
   },
 ];
 
-// --- Single Status Circle ka Component ---
 const StatusCircle = ({ name, avatar, isMe }) => (
   <TouchableOpacity style={styles.statusCircleContainer}>
     <View style={styles.statusRing}>
@@ -120,7 +117,6 @@ const StatusCircle = ({ name, avatar, isMe }) => (
   </TouchableOpacity>
 );
 
-// --- Channel Update Row ka Component ---
 const ChannelItem = ({ name, avatar, message, time, unread }) => (
   <TouchableOpacity style={styles.channelItem}>
     <Image source={{ uri: avatar }} style={styles.channelAvatar} />
@@ -141,13 +137,10 @@ const ChannelItem = ({ name, avatar, message, time, unread }) => (
   </TouchableOpacity>
 );
 
-// --- Main Updates Screen Component ---
 const UpdatesScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="white" barStyle="dark-content" />
-
-      {/* --- Header --- */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Updates</Text>
         <TouchableOpacity>
@@ -160,7 +153,6 @@ const UpdatesScreen = () => {
       </View>
 
       <ScrollView>
-        {/* --- Status Section --- */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Status</Text>
           <ScrollView
@@ -181,7 +173,6 @@ const UpdatesScreen = () => {
 
         <View style={styles.divider} />
 
-        {/* --- Channels Section --- */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Channels</Text>
@@ -195,7 +186,6 @@ const UpdatesScreen = () => {
         </View>
       </ScrollView>
 
-      {/* --- Floating Action Buttons --- */}
       <View style={styles.fabContainer}>
         <TouchableOpacity style={[styles.fab, styles.fabPencil]}>
           <MaterialCommunityIcons name="pencil" size={22} color="#075E54" />
@@ -210,7 +200,6 @@ const UpdatesScreen = () => {
 
 export default UpdatesScreen;
 
-// --- Styles ---
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'white' },
   header: {

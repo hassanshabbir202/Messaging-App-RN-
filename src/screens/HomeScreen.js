@@ -67,7 +67,6 @@ const chatsData = [
     avatar: 'https://randomuser.me/api/portraits/men/5.jpg',
     messageType: 'media',
   },
-  // --- Yahan se naya data add kiya gaya hai ---
   {
     id: '7',
     name: 'Work Group',

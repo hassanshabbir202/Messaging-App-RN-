@@ -11,24 +11,23 @@ import {
   Platform,
   Image,
   Alert,
-  ScrollView, // ScrollView add kiya taaki keyboard aane par form scroll ho sake
+  ScrollView,
 } from 'react-native';
 
 import { launchImageLibrary } from 'react-native-image-picker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 
-// Behtar samajh ke liye component ka naam badal diya hai
 const CreateNewContactScreen = ({ navigation }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [about, setAbout] = useState(''); // <-- Naya "About" status ke liye state
+  const [about, setAbout] = useState('');
   const [profileImage, setProfileImage] = useState(null);
 
   const [firstNameError, setFirstNameError] = useState('');
 
   const handleChoosePhoto = () => {
-    launchImageLibrary({ noData: true }, (response) => {
+    launchImageLibrary({ noData: true }, response => {
       if (response.didCancel) return;
       if (response.error) {
         Alert.alert('Error', 'Something went wrong while picking the image.');
@@ -40,30 +39,29 @@ const CreateNewContactScreen = ({ navigation }) => {
 
   const handleSave = () => {
     setFirstNameError('');
-    
+
     if (firstName.trim() === '') {
       setFirstNameError('First name is required.');
       return;
     }
 
-    // Yahan hum data ko AsyncStorage mein save karne ka logic likhenge
     const newContact = {
-        id: Date.now().toString(), // Ek unique ID
-        firstName,
-        lastName,
-        about: about || 'Hey there! I am using WhatsApp.', // Agar about khali hai to default text
-        profileImage,
+      id: Date.now().toString(),
+      firstName,
+      lastName,
+      about: about || 'Hey there! I am using WhatsApp.',
+      profileImage,
     };
 
     console.log('Saving contact:', newContact);
-    Alert.alert('Success', 'Contact saved successfully!'); // User ko feedback dein
-    navigation.goBack(); // Pichli screen par waapis jayein
+    Alert.alert('Success', 'Contact saved successfully!');
+    navigation.goBack();
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#075E54" barStyle="light-content" />
-      
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="white" />
@@ -71,21 +69,30 @@ const CreateNewContactScreen = ({ navigation }) => {
         <Text style={styles.headerTitle}>New contact</Text>
       </View>
 
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{flex: 1}}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
       >
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
           <View style={styles.content}>
             <View style={styles.profilePicContainer}>
-              <TouchableOpacity style={styles.profilePic} onPress={handleChoosePhoto}>
+              <TouchableOpacity
+                style={styles.profilePic}
+                onPress={handleChoosePhoto}
+              >
                 {profileImage ? (
-                  <Image source={{ uri: profileImage }} style={styles.profileImageStyle} />
+                  <Image
+                    source={{ uri: profileImage }}
+                    style={styles.profileImageStyle}
+                  />
                 ) : (
                   <FontAwesome5 name="user-alt" size={60} color="#c0c0c0" />
                 )}
               </TouchableOpacity>
-              <TouchableOpacity style={styles.cameraIconContainer} onPress={handleChoosePhoto}>
+              <TouchableOpacity
+                style={styles.cameraIconContainer}
+                onPress={handleChoosePhoto}
+              >
                 <Ionicons name="camera" size={24} color="white" />
               </TouchableOpacity>
             </View>
@@ -98,7 +105,9 @@ const CreateNewContactScreen = ({ navigation }) => {
                 value={firstName}
                 onChangeText={setFirstName}
               />
-              {firstNameError ? <Text style={styles.errorText}>{firstNameError}</Text> : null}
+              {firstNameError ? (
+                <Text style={styles.errorText}>{firstNameError}</Text>
+              ) : null}
 
               <TextInput
                 style={styles.input}
@@ -108,7 +117,6 @@ const CreateNewContactScreen = ({ navigation }) => {
                 onChangeText={setLastName}
               />
 
-              {/* --- Naya "About" Status ka Input --- */}
               <TextInput
                 style={styles.input}
                 placeholder="About"
@@ -176,7 +184,7 @@ const styles = StyleSheet.create({
   cameraIconContainer: {
     position: 'absolute',
     bottom: 5,
-    right: '28%', // Adjust for centering
+    right: '28%',
     backgroundColor: '#00a884',
     width: 44,
     height: 44,
@@ -204,7 +212,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     padding: 20,
-    justifyContent: 'flex-end'
+    justifyContent: 'flex-end',
   },
   saveButton: {
     backgroundColor: '#00a884',
