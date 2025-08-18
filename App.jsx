@@ -68,7 +68,6 @@ function MainTabNavigator() {
   );
 }
 
-// --- Main App Component ---
 export default function App() {
   return (
     <NavigationContainer>
