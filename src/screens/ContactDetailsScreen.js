@@ -9,32 +9,28 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Image, // Image component ko import karein
-  Alert, // Alert dikhane ke liye
+  Image,
+  Alert,
+  ScrollView, // ScrollView add kiya taaki keyboard aane par form scroll ho sake
 } from 'react-native';
 
-// Nayi libraries ko import karein
 import { launchImageLibrary } from 'react-native-image-picker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 
-const ContactDetailsScreen = ({ navigation }) => {
-  // Input fields aur image ke liye state
+// Behtar samajh ke liye component ka naam badal diya hai
+const CreateNewContactScreen = ({ navigation }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [profileImage, setProfileImage] = useState(null); // Image URI ko store karega
+  const [about, setAbout] = useState(''); // <-- Naya "About" status ke liye state
+  const [profileImage, setProfileImage] = useState(null);
 
-  // Validations ke liye error states
   const [firstNameError, setFirstNameError] = useState('');
-  const [lastNameError, setLastNameError] = useState('');
 
-  // Function to handle image picking
   const handleChoosePhoto = () => {
     launchImageLibrary({ noData: true }, (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
-      } else if (response.error) {
-        console.log('ImagePicker Error: ', response.error);
+      if (response.didCancel) return;
+      if (response.error) {
         Alert.alert('Error', 'Something went wrong while picking the image.');
       } else if (response.assets && response.assets[0].uri) {
         setProfileImage(response.assets[0].uri);
@@ -42,29 +38,26 @@ const ContactDetailsScreen = ({ navigation }) => {
     });
   };
 
-  // Function to handle save with validations
   const handleSave = () => {
-    // Pehle purane errors ko clear karein
     setFirstNameError('');
-    setLastNameError('');
     
-    let isValid = true;
-
     if (firstName.trim() === '') {
       setFirstNameError('First name is required.');
-      isValid = false;
-    }
-    if (lastName.trim() === '') {
-      setLastNameError('Last name is required.');
-      isValid = false;
+      return;
     }
 
-    if (!isValid) {
-      return; // Agar validation fail ho to aage na badhein
-    }
+    // Yahan hum data ko AsyncStorage mein save karne ka logic likhenge
+    const newContact = {
+        id: Date.now().toString(), // Ek unique ID
+        firstName,
+        lastName,
+        about: about || 'Hey there! I am using WhatsApp.', // Agar about khali hai to default text
+        profileImage,
+    };
 
-    console.log('Saving contact:', { firstName, lastName, profileImage });
-    navigation.popToTop();
+    console.log('Saving contact:', newContact);
+    Alert.alert('Success', 'Contact saved successfully!'); // User ko feedback dein
+    navigation.goBack(); // Pichli screen par waapis jayein
   };
 
   return (
@@ -82,57 +75,62 @@ const ContactDetailsScreen = ({ navigation }) => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{flex: 1}}
       >
-        <View style={styles.content}>
-          <View style={styles.profilePicContainer}>
-            {/* Ab profile picture section clickable hai */}
-            <TouchableOpacity style={styles.profilePic} onPress={handleChoosePhoto}>
-              {profileImage ? (
-                // Agar image select ho gayi hai to woh dikhayein
-                <Image source={{ uri: profileImage }} style={styles.profileImageStyle} />
-              ) : (
-                // Warna default icon dikhayein
-                <FontAwesome5 name="users" size={60} color="#c0c0c0" />
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.cameraIconContainer} onPress={handleChoosePhoto}>
-              <Ionicons name="camera" size={24} color="white" />
-            </TouchableOpacity>
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+          <View style={styles.content}>
+            <View style={styles.profilePicContainer}>
+              <TouchableOpacity style={styles.profilePic} onPress={handleChoosePhoto}>
+                {profileImage ? (
+                  <Image source={{ uri: profileImage }} style={styles.profileImageStyle} />
+                ) : (
+                  <FontAwesome5 name="user-alt" size={60} color="#c0c0c0" />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.cameraIconContainer} onPress={handleChoosePhoto}>
+                <Ionicons name="camera" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.inputSection}>
+              <TextInput
+                style={styles.input}
+                placeholder="First name"
+                placeholderTextColor="#888"
+                value={firstName}
+                onChangeText={setFirstName}
+              />
+              {firstNameError ? <Text style={styles.errorText}>{firstNameError}</Text> : null}
+
+              <TextInput
+                style={styles.input}
+                placeholder="Last name"
+                placeholderTextColor="#888"
+                value={lastName}
+                onChangeText={setLastName}
+              />
+
+              {/* --- Naya "About" Status ka Input --- */}
+              <TextInput
+                style={styles.input}
+                placeholder="About"
+                placeholderTextColor="#888"
+                value={about}
+                onChangeText={setAbout}
+              />
+            </View>
           </View>
 
-          <View style={styles.inputSection}>
-            <TextInput
-              style={styles.input}
-              placeholder="First name"
-              placeholderTextColor="#888"
-              value={firstName}
-              onChangeText={setFirstName}
-            />
-            {/* Error message yahan dikhega */}
-            {firstNameError ? <Text style={styles.errorText}>{firstNameError}</Text> : null}
-
-            <TextInput
-              style={[styles.input, {marginTop: 15}]} // Thoda upar se margin
-              placeholder="Last name"
-              placeholderTextColor="#888"
-              value={lastName}
-              onChangeText={setLastName}
-            />
-            {/* Error message yahan dikhega */}
-            {lastNameError ? <Text style={styles.errorText}>{lastNameError}</Text> : null}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
           </View>
-        </View>
-
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>Save</Text>
-          </TouchableOpacity>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
-export default ContactDetailsScreen;
+export default CreateNewContactScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -159,7 +157,7 @@ const styles = StyleSheet.create({
   },
   profilePicContainer: {
     alignItems: 'center',
-    marginVertical: 30,
+    marginVertical: 20,
     position: 'relative',
   },
   profilePic: {
@@ -170,7 +168,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Naya style
   profileImageStyle: {
     width: 140,
     height: 140,
@@ -179,7 +176,7 @@ const styles = StyleSheet.create({
   cameraIconContainer: {
     position: 'absolute',
     bottom: 5,
-    right: 90,
+    right: '28%', // Adjust for centering
     backgroundColor: '#00a884',
     width: 44,
     height: 44,
@@ -195,17 +192,19 @@ const styles = StyleSheet.create({
   input: {
     fontSize: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: 1.5,
     borderBottomColor: '#ccc',
+    marginBottom: 15,
   },
-  // Naya style
   errorText: {
     color: 'red',
     fontSize: 12,
-    marginTop: 5,
+    marginTop: -10,
+    marginBottom: 10,
   },
   buttonContainer: {
     padding: 20,
+    justifyContent: 'flex-end'
   },
   saveButton: {
     backgroundColor: '#00a884',
