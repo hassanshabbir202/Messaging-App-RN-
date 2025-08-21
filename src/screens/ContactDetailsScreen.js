@@ -14,6 +14,9 @@ import {
   ScrollView,
 } from 'react-native';
 
+// Step 1: AsyncStorage ko import karein
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { launchImageLibrary } from 'react-native-image-picker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
@@ -23,7 +26,6 @@ const CreateNewContactScreen = ({ navigation }) => {
   const [lastName, setLastName] = useState('');
   const [about, setAbout] = useState('');
   const [profileImage, setProfileImage] = useState(null);
-
   const [firstNameError, setFirstNameError] = useState('');
 
   const handleChoosePhoto = () => {
@@ -37,9 +39,10 @@ const CreateNewContactScreen = ({ navigation }) => {
     });
   };
 
-  const handleSave = () => {
-    setFirstNameError('');
+  // CreateNewContactScreen.js
 
+  const handleSave = async () => {
+    setFirstNameError('');
     if (firstName.trim() === '') {
       setFirstNameError('First name is required.');
       return;
@@ -47,15 +50,34 @@ const CreateNewContactScreen = ({ navigation }) => {
 
     const newContact = {
       id: Date.now().toString(),
-      firstName,
-      lastName,
-      about: about || 'Hey there! I am using WhatsApp.',
-      profileImage,
+      name: `${firstName} ${lastName}`.trim(),
+      status: about || 'Hey there! I am using WhatsApp.',
+      avatar: profileImage,
     };
 
-    console.log('Saving contact:', newContact);
-    Alert.alert('Success', 'Contact saved successfully!');
-    navigation.goBack();
+    try {
+      const existingContactsRaw = await AsyncStorage.getItem(
+        'my_contacts_list',
+      );
+      const existingContacts = existingContactsRaw
+        ? JSON.parse(existingContactsRaw)
+        : [];
+      const updatedContacts = [...existingContacts, newContact];
+      await AsyncStorage.setItem(
+        'my_contacts_list',
+        JSON.stringify(updatedContacts),
+      );
+      Alert.alert('Success', 'Contact saved successfully!');
+
+      // --- YAHAN BADLAAV KIYA GAYA HAI ---
+      // User ko hamesha 'Chats' tab (jo 'HomeTabs' ke andar hai) par bhejein
+      navigation.navigate('HomeTabs', {
+        screen: 'Chats', // Specify the exact tab
+      });
+    } catch (error) {
+      console.error('Failed to save contact.', error);
+      Alert.alert('Error', 'An error occurred while saving the contact.');
+    }
   };
 
   return (
@@ -141,6 +163,7 @@ const CreateNewContactScreen = ({ navigation }) => {
 export default CreateNewContactScreen;
 
 const styles = StyleSheet.create({
+  // ... Baaki saare styles bilkul waise hi rahenge ...
   container: {
     flex: 1,
     backgroundColor: 'white',

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,188 +8,106 @@ import {
   StyleSheet,
   SafeAreaView,
   StatusBar,
+  ActivityIndicator, // Loading ke liye
 } from 'react-native';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useIsFocused } from '@react-navigation/native';
 
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-const chatsData = [
-  {
-    id: '1',
-    name: 'Besties',
-    lastMessage: 'Sarah: For tn: 👟 or 👠?',
-    time: '11:26 AM',
-    avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
-    isPinned: true,
-  },
-  {
-    id: '2',
-    name: 'Jonathan Miller',
-    lastMessage: 'Sticker',
-    time: '9:28 AM',
-    avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-    unread: 4,
-    hasStory: true,
-    messageType: 'sticker',
-  },
-  {
-    id: '3',
-    name: 'Maya Townsend',
-    lastMessage: 'Dinner soon? 🍷',
-    time: '8:15 AM',
-    avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-    readStatus: 'read',
-  },
-  {
-    id: '4',
-    name: 'Lillian Evaro',
-    lastMessage: 'GIF',
-    time: '8:03 AM',
-    avatar: 'https://randomuser.me/api/portraits/women/3.jpg',
-    unread: 2,
-    hasStory: true,
-    messageType: 'gif',
-  },
-  {
-    id: '5',
-    name: 'Cristiano Alvés',
-    lastMessage: 'pls tell me you follow SingleCatClu...',
-    time: 'Yesterday',
-    avatar: 'https://randomuser.me/api/portraits/men/26.jpg',
-    readStatus: 'read',
-  },
-  {
-    id: '6',
-    name: 'The Hendricks',
-    lastMessage: 'Mom: How was this 10 yrs a...',
-    time: 'Yesterday',
-    avatar: 'https://randomuser.me/api/portraits/men/5.jpg',
-    messageType: 'media',
-  },
-  {
-    id: '7',
-    name: 'Work Group',
-    lastMessage: 'Alex: Project deadline is tomorrow!',
-    time: 'Yesterday',
-    avatar: 'https://randomuser.me/api/portraits/men/11.jpg',
-    unread: 1,
-  },
-  {
-    id: '8',
-    name: 'Jessica Pearson',
-    lastMessage: 'See you at the cafe.',
-    time: 'Tuesday',
-    avatar: 'https://randomuser.me/api/portraits/women/17.jpg',
-    readStatus: 'read',
-  },
-  {
-    id: '9',
-    name: 'David Chen',
-    lastMessage: 'Sent you the files.',
-    time: 'Tuesday',
-    avatar: 'https://randomuser.me/api/portraits/men/45.jpg',
-    readStatus: 'read',
-    messageType: 'media',
-  },
-  {
-    id: '10',
-    name: 'Emily Rose',
-    lastMessage: 'Happy Birthday! 🎉',
-    time: 'Monday',
-    avatar: 'https://randomuser.me/api/portraits/women/50.jpg',
-    hasStory: true,
-  },
-];
-
 const ChatItem = ({ item, onPress }) => (
   <TouchableOpacity style={styles.chatItem} onPress={onPress}>
     <View style={item.hasStory ? styles.statusRing : styles.avatarContainer}>
-      <Image source={{ uri: item.avatar }} style={styles.avatar} />
+      {item.avatar ? (
+        <Image source={{ uri: item.avatar }} style={styles.avatar} />
+      ) : (
+        // Agar contact ki image na ho to default icon dikhayein
+        <View style={styles.defaultAvatar}>
+          <Ionicons name="person" size={30} color="#FFFFFF" />
+        </View>
+      )}
     </View>
     <View style={styles.chatInfo}>
       <View style={styles.chatHeader}>
         <Text style={styles.name}>{item.name}</Text>
-        <Text style={item.unread > 0 ? styles.timeUnread : styles.time}>
-          {item.time}
-        </Text>
+        <Text style={styles.time}>{item.time}</Text>
       </View>
       <View style={styles.chatSubheader}>
-        <View style={styles.messageContainer}>
-          {item.readStatus === 'read' && (
-            <Ionicons
-              name="checkmark-done"
-              size={16}
-              color="#34b7f1"
-              style={styles.readReceipt}
-            />
-          )}
-          {item.messageType === 'sticker' && (
-            <MaterialCommunityIcons
-              name="sticker-emoji"
-              size={16}
-              color="#667781"
-              style={styles.messageIcon}
-            />
-          )}
-          {item.messageType === 'gif' && (
-            <Text style={[styles.lastMessage, { fontWeight: '500' }]}>GIF</Text>
-          )}
-          {item.messageType === 'media' && (
-            <MaterialIcons
-              name="photo-camera"
-              size={16}
-              color="#667781"
-              style={styles.messageIcon}
-            />
-          )}
-          <Text style={styles.lastMessage} numberOfLines={1}>
-            {item.lastMessage}
-          </Text>
-        </View>
-        <View style={styles.badgeContainer}>
-          {item.isPinned && (
-            <MaterialCommunityIcons name="pin" size={18} color="#667781" />
-          )}
-          {item.unread > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadText}>{item.unread}</Text>
-            </View>
-          )}
-        </View>
+        <Text style={styles.lastMessage} numberOfLines={1}>
+          {item.lastMessage}
+        </Text>
       </View>
     </View>
   </TouchableOpacity>
 );
 
 const HomeScreen = ({ navigation }) => {
+  const [chats, setChats] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const isFocused = useIsFocused();
+
+  const loadChats = async () => {
+    try {
+      // Abhi hum contacts ko hi chat samajh rahe hain
+      const contactsRaw = await AsyncStorage.getItem('my_contacts_list');
+      const contacts = contactsRaw ? JSON.parse(contactsRaw) : [];
+
+      // Aage jakar, hum yahan chat ka data fetch karenge.
+      // Abhi ke liye, har contact ko ek chat item bana dete hain.
+      const formattedChats = contacts.map(contact => ({
+        ...contact,
+        lastMessage: 'Tap to start chatting...', // Dummy message
+        time: '10:00 AM', // Dummy time
+      }));
+
+      setChats(formattedChats.reverse()); // Naya contact upar dikhe
+    } catch (error) {
+      console.error('Failed to load chats.', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isFocused) {
+      setIsLoading(true); // Har baar refresh hone par loading dikhayein
+      loadChats();
+    }
+  }, [isFocused]);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
+      {/* Header, Search, aur Filters waise hi rahenge */}
       <View style={styles.header}>
         <Text style={styles.title}>WhatsApp</Text>
         <View style={styles.headerIconsContainer}>
-          <MaterialCommunityIcons
-            name="camera-outline"
-            size={26}
-            color="#54656f"
-            style={styles.icon}
-          />
-          <MaterialCommunityIcons
-            name="dots-vertical"
-            size={26}
-            color="#54656f"
-            style={styles.icon}
-          />
+          <TouchableOpacity>
+            <MaterialCommunityIcons
+              name="camera-outline"
+              size={26}
+              color="#54656f"
+              style={styles.icon}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <MaterialCommunityIcons
+              name="dots-vertical"
+              size={26}
+              color="#54656f"
+              style={styles.icon}
+            />
+          </TouchableOpacity>
         </View>
       </View>
-
       <View style={styles.searchBarContainer}>
         <MaterialIcons name="search" size={22} color="#54656f" />
         <Text style={styles.searchInput}>Ask Meta AI or Search</Text>
       </View>
-
       <View style={styles.filters}>
         <TouchableOpacity style={[styles.filterButton, styles.activeFilter]}>
           <Text style={styles.activeFilterText}>All</Text>
@@ -202,25 +120,42 @@ const HomeScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <View style={{ flex: 1 }}>
-        <FlatList
-          data={chatsData}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <ChatItem
-              item={item}
-              onPress={() =>
-                navigation.navigate('ChatHistory', {
-                  userName: item.name,
-                  userAvatar: item.avatar,
-                })
-              }
-            />
-          )}
-          showsVerticalScrollIndicator={false}
-        />
-        <TouchableOpacity style={styles.fab}
-            onPress={() => navigation.navigate('NewContact')}
+      <View style={styles.listContainer}>
+        {isLoading ? (
+          <ActivityIndicator
+            size="large"
+            color="#008069"
+            style={{ marginTop: 50 }}
+          />
+        ) : chats.length > 0 ? (
+          <FlatList
+            data={chats}
+            keyExtractor={item => item.id}
+            renderItem={({ item }) => (
+              <ChatItem
+                item={item}
+                onPress={() =>
+                  navigation.navigate('ChatHistory', {
+                    userName: item.name,
+                    userAvatar: item.avatar,
+                    contactId: item.id, 
+                  })
+                }
+              />
+            )}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No Chats Found</Text>
+            <Text style={styles.emptySubText}>
+              Tap the button below to start a new chat.
+            </Text>
+          </View>
+        )}
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => navigation.navigate('NewContact')}
         >
           <MaterialCommunityIcons
             name="message-plus-outline"
@@ -276,6 +211,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatarContainer: { width: 50, height: 50 },
+  defaultAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#ccc',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   statusRing: {
     width: 54,
     height: 54,
@@ -286,7 +229,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatar: { width: 50, height: 50, borderRadius: 25 },
-  chatInfo: { flex: 1, marginLeft: 15, justifyContent: 'center' },
+  chatInfo: {
+    flex: 1,
+    marginLeft: 15,
+    justifyContent: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#f0f0f0',
+    paddingBottom: 12,
+  },
   chatHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -294,29 +244,8 @@ const styles = StyleSheet.create({
   },
   name: { fontSize: 17, fontWeight: '500', color: '#111b21' },
   time: { fontSize: 12, color: '#667781' },
-  timeUnread: { fontSize: 12, color: '#25d366', fontWeight: 'bold' },
-  chatSubheader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  messageContainer: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  readReceipt: { marginRight: 5 },
-  messageIcon: { marginRight: 5 },
+  chatSubheader: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
   lastMessage: { fontSize: 14, color: '#667781', marginRight: 5 },
-  badgeContainer: { alignItems: 'center', flexDirection: 'row' },
-  unreadBadge: {
-    backgroundColor: '#25d366',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
-    paddingHorizontal: 5,
-  },
-  unreadText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
   fab: {
     position: 'absolute',
     right: 20,
@@ -328,5 +257,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 4,
+  },
+  listContainer: { flex: 1 },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: { fontSize: 20, fontWeight: 'bold', color: '#54656f' },
+  emptySubText: {
+    fontSize: 14,
+    color: '#888',
+    marginTop: 10,
+    textAlign: 'center',
   },
 });

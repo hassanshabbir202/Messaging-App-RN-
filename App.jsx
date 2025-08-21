@@ -1,9 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+
+// Step 1: SafeAreaProvider ko import karein
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+// Navigation libraries
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+
+// Icons
 import Ionicons from 'react-native-vector-icons/Ionicons';
+
+// Screens
 import ChatsScreen from './src/screens/HomeScreen';
 import ChatHistoryScreen from './src/screens/ChatHistoryScreen';
 import CreateNewContactScreen from './src/screens/CreateNewContactScreen';
@@ -12,6 +21,7 @@ import CallsScreen from './src/screens/CallsScreen';
 import CommunitiesScreen from './src/screens/CommunitiesScreen';
 import UpdatesScreen from './src/screens/UpdatesScreen';
 
+// Navigators
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
@@ -70,30 +80,33 @@ function MainTabNavigator() {
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="HomeTabs">
-        <Stack.Screen
-          name="HomeTabs"
-          component={MainTabNavigator}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="ChatHistory"
-          component={ChatHistoryScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="NewContact"
-          component={CreateNewContactScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="ContactDetails"
-          component={ContactDetailsScreen}
-          options={{ headerShown: false }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    // Step 2: Poore app ko SafeAreaProvider se wrap karein
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="HomeTabs">
+          <Stack.Screen
+            name="HomeTabs"
+            component={MainTabNavigator}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ChatHistory"
+            component={ChatHistoryScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="NewContact"
+            component={CreateNewContactScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ContactDetails"
+            component={ContactDetailsScreen}
+            options={{ headerShown: false }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
 

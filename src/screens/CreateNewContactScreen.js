@@ -1,107 +1,113 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
   StatusBar,
-  FlatList,
-  Image,
   TouchableOpacity,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Image,
+  Alert,
+  ScrollView,
 } from 'react-native';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { launchImageLibrary } from 'react-native-image-picker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 
-const contactsData = [
-  {
-    id: '1',
-    name: 'Abby',
-    status: 'Hey there! I am using WhatsApp.',
-    avatar: 'https://randomuser.me/api/portraits/women/21.jpg',
-  },
-  {
-    id: '2',
-    name: 'Angie Nondorf',
-    status: 'Hey there! I am using WhatsApp.',
-    avatar: 'https://randomuser.me/api/portraits/women/22.jpg',
-  },
-  {
-    id: '3',
-    name: 'Ash',
-    status: 'Hey there! I am using WhatsApp.',
-    avatar: null, 
-  },
-  {
-    id: '4',
-    name: 'Christy',
-    status: 'Miss Congeniality/2nd runner up to Miss...',
-    avatar: 'https://randomuser.me/api/portraits/women/24.jpg',
-  },
-  {
-    id: '5',
-    name: 'Daniel Nondorf',
-    status: '¡Hola! Estoy usando WhatsApp.',
-    avatar: 'https://randomuser.me/api/portraits/men/25.jpg',
-  },
-  {
-    id: '6',
-    name: 'Jennifer Nondorf',
-    status: 'Hey there! I am using WhatsApp.',
-    avatar: 'https://randomuser.me/api/portraits/women/26.jpg',
-  },
-  {
-    id: '7',
-    name: 'Mike Weston',
-    status: 'Hey there! I am using WhatsApp.',
-    avatar: null,
-  },
-  {
-    id: '8',
-    name: 'Nick Pratt',
-    status: 'Available',
-    avatar: 'https://randomuser.me/api/portraits/men/28.jpg',
-  },
-];
+const CreateNewContactScreen = ({ route, navigation }) => {
+  // route.params se check karein ki hum "Edit Mode" mein hain ya "New Mode" mein
+  const contactIdToEdit = route.params?.contactIdToEdit;
+  const isEditMode = !!contactIdToEdit;
 
-const ListHeader = ({ navigation }) => (
-  <>
-    <TouchableOpacity style={styles.actionRow}>
-      <View style={styles.iconContainer}>
-        <FontAwesome5 name="users" size={20} color="white" />
-      </View>
-      <Text style={styles.actionText}>New group</Text>
-    </TouchableOpacity>
-    <TouchableOpacity
-      style={styles.actionRow}
-      onPress={() => navigation.navigate('ContactDetails')}
-    >
-      <View style={styles.iconContainer}>
-        <FontAwesome5 name="user-plus" size={18} color="white" />
-      </View>
-      <Text style={styles.actionText}>New contact</Text>
-    </TouchableOpacity>
-  </>
-);
+  // Form fields ke liye states
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [about, setAbout] = useState('');
+  const [profileImage, setProfileImage] = useState(null);
+  const [firstNameError, setFirstNameError] = useState('');
 
-const ContactItem = ({ item }) => (
-  <TouchableOpacity style={styles.contactRow}>
-    {item.avatar ? (
-      <Image source={{ uri: item.avatar }} style={styles.avatar} />
-    ) : (
-      <View style={styles.defaultAvatar}>
-        <Ionicons name="person" size={24} color="white" />
-      </View>
-    )}
-    <View style={styles.contactInfo}>
-      <Text style={styles.contactName}>{item.name}</Text>
-      <Text style={styles.contactStatus}>{item.status}</Text>
-    </View>
-  </TouchableOpacity>
-);
+  // Agar "Edit Mode" hai, to purana data load karein
+  useEffect(() => {
+    if (isEditMode) {
+      const loadContactDetails = async () => {
+        try {
+            const existingContactsRaw = await AsyncStorage.getItem('my_contacts_list');
+            const existingContacts = existingContactsRaw ? JSON.parse(existingContactsRaw) : [];
+            const contactToEdit = existingContacts.find(c => c.id === contactIdToEdit);
+            
+            if (contactToEdit) {
+              const nameParts = contactToEdit.name.split(' ');
+              setFirstName(nameParts[0] || '');
+              setLastName(nameParts.slice(1).join(' ') || '');
+              setAbout(contactToEdit.status);
+              setProfileImage(contactToEdit.avatar);
+            }
+        } catch (error) {
+            console.error("Failed to load contact for editing.", error);
+        }
+      };
+      loadContactDetails();
+    }
+  }, [contactIdToEdit]);
 
-const CreateNewContactScreen = ({ navigation }) => {
+  // Gallery se photo chunne ka function
+  const handleChoosePhoto = () => {
+    launchImageLibrary({ noData: true }, response => {
+      if (response.didCancel) return;
+      if (response.error) {
+        Alert.alert('Error', 'Something went wrong while picking the image.');
+      } else if (response.assets && response.assets[0].uri) {
+        setProfileImage(response.assets[0].uri);
+      }
+    });
+  };
+
+  // Contact ko save ya update karne ka function
+  const handleSaveOrUpdate = async () => {
+    setFirstNameError('');
+    if (firstName.trim() === '') {
+      setFirstNameError('First name is required.');
+      return;
+    }
+
+    const contactData = {
+      name: `${firstName} ${lastName}`.trim(),
+      status: about || 'Hey there! I am using WhatsApp.',
+      avatar: profileImage,
+    };
+
+    try {
+      const existingContactsRaw = await AsyncStorage.getItem('my_contacts_list');
+      let existingContacts = existingContactsRaw ? JSON.parse(existingContactsRaw) : [];
+      
+      if (isEditMode) {
+        // Edit Mode: Contact ko find karke update karein
+        const updatedContacts = existingContacts.map(c => 
+          c.id === contactIdToEdit ? { ...c, ...contactData } : c
+        );
+        await AsyncStorage.setItem('my_contacts_list', JSON.stringify(updatedContacts));
+        Alert.alert('Success', 'Contact updated successfully!');
+      } else {
+        // New Mode: Naya contact list mein add karein
+        const newContact = { id: Date.now().toString(), ...contactData };
+        const updatedContacts = [...existingContacts, newContact];
+        await AsyncStorage.setItem('my_contacts_list', JSON.stringify(updatedContacts));
+        Alert.alert('Success', 'Contact saved successfully!');
+      }
+      
+      navigation.navigate('HomeTabs', { screen: 'Chats' });
+
+    } catch (error) {
+      console.error("Failed to save or update contact.", error);
+      Alert.alert('Error', 'An error occurred.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#075E54" barStyle="light-content" />
@@ -110,31 +116,61 @@ const CreateNewContactScreen = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>Select contact</Text>
-          <Text style={styles.headerSubtitle}>
-            {contactsData.length} contacts
-          </Text>
-        </View>
-        <View style={styles.headerIcons}>
-          <MaterialIcons
-            name="search"
-            size={24}
-            color="white"
-            style={{ marginRight: 20 }}
-          />
-          <MaterialIcons name="more-vert" size={24} color="white" />
-        </View>
+        <Text style={styles.headerTitle}>{isEditMode ? 'Edit contact' : 'New contact'}</Text>
       </View>
 
-      {/* Contacts ki List */}
-      <FlatList
-        data={contactsData}
-        renderItem={({ item }) => <ContactItem item={item} />}
-        keyExtractor={item => item.id}
-        ListHeaderComponent={<ListHeader navigation={navigation} />}
-        showsVerticalScrollIndicator={true}
-      />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+          <View style={styles.content}>
+            <View style={styles.profilePicContainer}>
+              <TouchableOpacity style={styles.profilePic} onPress={handleChoosePhoto}>
+                {profileImage ? (
+                  <Image source={{ uri: profileImage }} style={styles.profileImageStyle} />
+                ) : (
+                  <FontAwesome5 name="user-alt" size={60} color="#c0c0c0" />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.cameraIconContainer} onPress={handleChoosePhoto}>
+                <Ionicons name="camera" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.inputSection}>
+              <TextInput
+                style={styles.input}
+                placeholder="First name"
+                placeholderTextColor="#888"
+                value={firstName}
+                onChangeText={setFirstName}
+              />
+              {firstNameError ? <Text style={styles.errorText}>{firstNameError}</Text> : null}
+              <TextInput
+                style={styles.input}
+                placeholder="Last name"
+                placeholderTextColor="#888"
+                value={lastName}
+                onChangeText={setLastName}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="About"
+                placeholderTextColor="#888"
+                value={about}
+                onChangeText={setAbout}
+              />
+            </View>
+          </View>
+
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.saveButton} onPress={handleSaveOrUpdate}>
+              <Text style={styles.saveButtonText}>{isEditMode ? 'Update' : 'Save'}</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -150,75 +186,80 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#075E54',
-    padding: 15,
+    paddingVertical: 15,
+    paddingHorizontal: 15,
     elevation: 4,
-  },
-  headerTitleContainer: {
-    flex: 1,
-    marginLeft: 20,
   },
   headerTitle: {
     color: 'white',
     fontSize: 20,
     fontWeight: 'bold',
+    marginLeft: 25,
   },
-  headerSubtitle: {
-    color: 'white',
-    fontSize: 12,
+  content: {
+    flex: 1,
+    padding: 20,
   },
-  headerIcons: {
-    flexDirection: 'row',
-  },
-  actionRow: {
-    flexDirection: 'row',
+  profilePicContainer: {
     alignItems: 'center',
-    paddingHorizontal: 15,
+    marginVertical: 20,
+    position: 'relative',
+  },
+  profilePic: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: '#f0f2f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileImageStyle: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+  },
+  cameraIconContainer: {
+    position: 'absolute',
+    bottom: 5,
+    right: '28%',
+    backgroundColor: '#00a884',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  inputSection: {
+    marginTop: 20,
+  },
+  input: {
+    fontSize: 16,
     paddingVertical: 12,
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#ccc',
+    marginBottom: 15,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#25D366',
-    justifyContent: 'center',
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: -10,
+    marginBottom: 10,
+  },
+  buttonContainer: {
+    padding: 20,
+    justifyContent: 'flex-end',
+  },
+  saveButton: {
+    backgroundColor: '#00a884',
+    padding: 15,
+    borderRadius: 25,
     alignItems: 'center',
   },
-  actionText: {
-    marginLeft: 15,
+  saveButtonText: {
+    color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#111',
-  },
-  contactRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-  },
-  defaultAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#d9d9d9',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  contactInfo: {
-    marginLeft: 15,
-    justifyContent: 'center',
-  },
-  contactName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#111',
-  },
-  contactStatus: {
-    fontSize: 14,
-    color: 'gray',
   },
 });
