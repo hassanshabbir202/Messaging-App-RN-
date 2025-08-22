@@ -20,6 +20,7 @@ import ContactDetailsScreen from './src/screens/ContactDetailsScreen';
 import CallsScreen from './src/screens/CallsScreen';
 import CommunitiesScreen from './src/screens/CommunitiesScreen';
 import UpdatesScreen from './src/screens/UpdatesScreen';
+import ChatEditorScreen from './src/screens/ChatEditorScreen';
 
 // Navigators
 const Tab = createBottomTabNavigator();
@@ -102,6 +103,11 @@ export default function App() {
           <Stack.Screen
             name="ContactDetails"
             component={ContactDetailsScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ChatEditor"
+            component={ChatEditorScreen}
             options={{ headerShown: false }}
           />
         </Stack.Navigator>
